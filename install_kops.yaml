@@ -1,0 +1,21 @@
+---
+- name: bootstrap environment
+  hosts: "localhost"    
+  gather_facts: no
+  vars_files:
+    - vars/common.yaml
+  become: yes
+
+  roles:
+    - bootstrap_env
+
+- name: Install kops with ansible
+  hosts: "localhost"
+  gather_facts: no
+  become: yes
+  vars_files:
+    - vars/common.yaml
+  roles:
+    - install_kops
+    - configure_kops
+#    - configure-notecicd-app

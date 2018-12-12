@@ -1,0 +1,35 @@
+---
+#- name: add /etc/environment variable
+#  template: 
+#    src: environment.j2
+#    dest: /etc/environment
+#  with_items: "{{ kops_item }}"
+- name: clean up /etc/environment
+  shell: |
+    > /etc/environment
+
+- name: add a current path to /etc/environment
+  lineinfile:
+    dest=/etc/environment
+    state=present
+    line="{{ item.v }}={{ item.l }}"
+  with_items: "{{ kops_item }}"
+
+- name: install python-pip 
+  yum:
+    name: python-pip
+    state: latest
+
+- name: install aws cli with user upgrade
+  pip: 
+    name: awscli
+    extra_args: --user --upgrade    
+
+- name: install boto3 and boto core
+  pip: 
+    name: "{{ python }}"
+
+- name: reset ssh connection to allow user changes to affect 'current login user'
+  meta: reset_connection
+
+

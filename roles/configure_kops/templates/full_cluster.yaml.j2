@@ -1,0 +1,112 @@
+apiVersion: kops/v1alpha2
+kind: Cluster
+metadata:
+  creationTimestamp: 2018-12-11T02:14:44Z
+  name: k13-stg-novatti.k8s.local
+spec:
+  api:
+    loadBalancer:
+      type: Public
+  authorization:
+    rbac: {}
+  channel: stable
+  cloudProvider: aws
+  configBase: s3://kops-bucket-huy-k13-stg-novatti/k13-stg-novatti.k8s.local
+  etcdClusters:
+  - etcdMembers:
+    - instanceGroup: master-ap-southeast-1a
+      name: a
+    name: main
+  - etcdMembers:
+    - instanceGroup: master-ap-southeast-1a
+      name: a
+    name: events
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  kubernetesApiAccess:
+  - 0.0.0.0/0
+  kubernetesVersion: 1.10.11
+  masterPublicName: api.k13-stg-novatti.k8s.local
+  networkCIDR: 172.20.0.0/16
+  networking:
+    weave:
+      mtu: 8912
+  nonMasqueradeCIDR: 100.64.0.0/10
+  sshAccess:
+  - 0.0.0.0/0
+  subnets:
+  - cidr: 172.20.32.0/19
+    name: ap-southeast-1a
+    type: Private
+    zone: ap-southeast-1a
+  - cidr: 172.20.0.0/22
+    name: utility-ap-southeast-1a
+    type: Utility
+    zone: ap-southeast-1a
+  topology:
+    dns:
+      type: Public
+    masters: private
+    nodes: private
+
+---
+
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: 2018-12-11T02:50:04Z
+  labels:
+    kops.k8s.io/cluster: k13-stg-novatti.k8s.local
+  name: bastions
+spec:
+  image: kope.io/k8s-1.10-debian-jessie-amd64-hvm-ebs-2018-08-17
+  machineType: t2.micro
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: bastions
+  role: Bastion
+  subnets:
+  - utility-ap-southeast-1a
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: 2018-12-11T02:14:45Z
+  labels:
+    kops.k8s.io/cluster: k13-stg-novatti.k8s.local
+  name: master-ap-southeast-1a
+spec:
+  image: kope.io/k8s-1.10-debian-jessie-amd64-hvm-ebs-2018-08-17
+  machineType: m3.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-ap-southeast-1a
+  role: Master
+  subnets:
+  - ap-southeast-1a
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: 2018-12-11T02:14:45Z
+  labels:
+    kops.k8s.io/cluster: k13-stg-novatti.k8s.local
+  name: nodes
+spec:
+  image: kope.io/k8s-1.10-debian-jessie-amd64-hvm-ebs-2018-08-17
+  machineType: t2.micro
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: nodes
+  role: Node
+  subnets:
+  - ap-southeast-1a

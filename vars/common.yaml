@@ -1,0 +1,18 @@
+temp_dir: "/tmp"
+kops_exec_dir: "/usr/local/bin"
+
+kops:
+  bucket_name: "kops-bucket-huy-{{ project }}-{{ env }}-{{ aws_profile }}"
+  region: "{{ aws_region }}"
+  cluster_name: "{{ project }}-{{ env }}-{{ aws_profile }}.k8s.local"
+kops_item:
+  - { v: "PATH", l: "/sbin:/bin:/usr/sbin:/usr/bin:/opt/puppetlabs/bin:{{ kops_exec_dir }}" }
+  - { v: "KOPS_BUCKET_NAME", l: "{{ kops.bucket_name }}" }
+  - { v: "KOPS_REGION", l:  "{{ kops.region }}" }
+  - { v: "KOPS_CLUSTER_NAME", l: "{{ kops.cluster_name}}" }
+  - { v: "KOPS_STATE_STORE", l: "s3://{{ kops.bucket_name }}" }
+
+python: 
+  - boto3
+  - botocore  
+  

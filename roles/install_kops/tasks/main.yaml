@@ -1,0 +1,51 @@
+---
+- name: shell install kops
+  shell: |
+    curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest|grep tag_name | cut -d '"' -f 4)/kops-linux-amd64    
+  args:
+    creates: kops-linux-amd64
+    chdir: "{{ temp_dir }}"
+    warn: False
+
+- name: move kops to {{ kops_exec_dir }} with permission
+  file:
+    src: "{{ temp_dir }}/kops-linux-amd64"
+    dest: "{{ kops_exec_dir }}/kops"
+    mode: 0755
+    state: hard
+
+
+- name: create S3 bucket and enable version
+  s3_bucket:
+    name: "{{ kops.bucket_name }}"
+    versioning: yes
+    policy: "{{ lookup('template','policy.json.j2') }}"
+    requester_pays: yes
+    profile: "{{ aws_profile }}"
+    tags: 
+      app: "kops"
+      env: "prod"
+
+- name: install kubectl with curl
+  shell: |
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl      
+  args: 
+    warn: False
+    chdir: "{{ temp_dir }}"
+    creates: "{{ kops_exec_dir }}/kubectl"
+
+- name: move kubectl to {{ kops_exec_dir }}
+  file: 
+    src: "{{ temp_dir }}/kubectl"
+    dest: "{{ kops_exec_dir }}/kubectl"
+    mode: 0755
+    state: hard
+  
+#- name: move kops
+#  shell: mv kops-linux-amd64 "{{ kops_exec_dir }}/kops" 
+#  args:
+#    chdir: "{{ temp_dir }}"
+
+
+
+

@@ -1,0 +1,69 @@
+---
+- name: create public private key
+  shell: |
+    ssh-keygen -t rsa -b 4096 -C "{{ aws_profile }}-{{ env }}-{{ project }}@tma.com.vn" -q -N "" -f $HOME/.ssh/{{ aws_profile }}-{{ env }}-{{ project }}_id_rsa
+  args:
+    creates: $HOME/.ssh/{{ aws_profile }}-{{ env }}-{{ project }}_id_rsa
+
+- name: get cluster status is alive or not
+  shell:  |
+    AWS_PROFILE={{ aws_profile }} {{ kops_exec_dir }}/kops validate cluster
+  register: kops_result_init
+  failed_when: kops_result_init.rc > 100
+
+- name: create KOPS cluster 
+  shell: >
+    AWS_PROFILE={{ aws_profile }} {{ kops_exec_dir }}/kops create cluster 
+    --cloud=aws 
+    --master-zones={{ kops.region }}a 
+    --node-count=1 
+    --node-size=t2.micro 
+    --zones={{ kops.region }}a 
+    --topology private 
+    --name={{ kops.cluster_name}} 
+    --networking weave 
+    --target terraform 
+    --yes
+  when: kops_result_init.rc != 0
+
+- name: delete admin secret key k8s
+  shell: |
+    AWS_PROFILE={{ aws_profile }} {{ kops_exec_dir }}/kops delete secret sshpublickey admin  
+  when: kops_result_init.rc != 0
+
+- name: create admin secret key k8s
+  shell: |
+    AWS_PROFILE={{ aws_profile }} {{ kops_exec_dir }}/kops create secret --name {{ kops.cluster_name}} sshpublickey admin -i $HOME/.ssh/{{ aws_profile }}-{{ env }}-{{ project }}_id_rsa.pub
+  when: kops_result_init.rc != 0
+
+- name: run update cluster {{ kops.cluster_name }}    
+  shell: |
+    AWS_PROFILE={{ aws_profile }} {{ kops_exec_dir }}/kops update cluster --yes 
+  when: kops_result_init.rc != 0
+
+- name: pause Ansible 30 seconds
+  pause:
+    seconds: 30
+
+- name: Loop the command validate until cluster {{ kops.cluster_name }} created successfully 
+  shell:  |
+    AWS_PROFILE={{ aws_profile }} {{ kops_exec_dir }}/kops validate cluster
+  register: kops_result
+  until: kops_result.rc == 0
+  retries: 15
+  delay: 20
+
+- name: create a temp bastion yaml config file
+  template: 
+    src: bastion.yaml.j2
+    dest: /tmp/bastion.yaml
+
+- name: create bastion host for cluster {{ kops.cluster_name }}    
+# export AWS_PROFILE={{ aws_profile }}; {{ kops_exec_dir }}/kops create instancegroup bastions --role Bastion --subnet utility-{{ kops.region }}a --name {{ kops.cluster_name }} --config /tmp/bastion.yaml
+  shell: |
+    export AWS_PROFILE={{ aws_profile }}; {{ kops_exec_dir }}/kops create -f /tmp/bastion.yaml
+    {{ kops_exec_dir }}/kops update cluster --yes
+    {{ kops_exec_dir }}/kops rolling-update cluster
+
+
+

@@ -1,0 +1,10 @@
+---
+- name: check out note resource
+  git: 
+    repo: "{{ item }}"
+    dest: /opt/notecicd/
+    version: master
+  with_items:
+    - "ssh://git@bitbucket.org/vododevops/note_resource_v1.git"
+    - "ssh://git@bitbucket.org/vododevops/note_test_v1.git"
+    - "ssh://git@bitbucket.org/vododevops/note_app_v1.git"   
