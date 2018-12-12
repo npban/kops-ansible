@@ -2,7 +2,7 @@
 
 1. Make sure you have ansible in your environment, and configured aws profile on ~/.aws/profile_name
 2. Clone this play book to your folder
-https://gitlab.tma.com.vn/kms/IMS/IMS_Document/tree/master/training/Configuration%20Management/Ansible/playbook/kops
+https://github.com/npban/kops-ansible
 3. Check the make file: 
 
 ```
